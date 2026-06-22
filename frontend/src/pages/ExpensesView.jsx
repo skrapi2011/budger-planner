@@ -13,7 +13,7 @@ function getCurrentMonth() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-export default function ExpensesView({ user }) {
+ export default function ExpensesView({ user }) {
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -21,6 +21,7 @@ export default function ExpensesView({ user }) {
   const [monthStr, setMonthStr] = useState(getCurrentMonth());
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
   useEffect(() => { loadExpenses(); }, [monthStr]);
 
@@ -56,12 +57,16 @@ export default function ExpensesView({ user }) {
     loadExpenses();
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Usunąć tę transakcję?')) return;
+  const handleConfirmDelete = async (id) => {
+    setPendingDeleteId(null);
     try {
       await api.deleteTransaction(id);
       loadExpenses();
     } catch {}
+  };
+
+  const handleCancelDelete = () => {
+    setPendingDeleteId(null);
   };
 
   const filteredByCategory = selectedCategory === 'all'
@@ -145,7 +150,7 @@ export default function ExpensesView({ user }) {
                   <div key={tx.id} style={{ backgroundColor: `${g.color}0D` }} className="px-4 py-3 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700">
                     <span style={{ color: tx.category_color || '#64748b' }} className="flex items-center gap-2 min-w-[140px] shrink-0 max-w-md truncate">
                       {tx.category_icon && <span>{tx.category_icon}</span>}
-                      <span className="text-gray-900 font-medium">{tx.description || tx.category_name}</span>
+                      <span className="text-gray-900 dark:text-slate-400 font-medium">{tx.description || tx.category_name}</span>
                     </span>
 
                     <div className="flex items-center gap-3 shrink-0 ml-4">
@@ -153,9 +158,20 @@ export default function ExpensesView({ user }) {
                       <span className={`font-semibold whitespace-nowrap ${tx.type === 'Przychód' ? 'text-green-600' : 'text-red-500'}`}>
                         {tx.amount.toFixed(2)} PLN
                       </span>
-                      <button onClick={() => handleDelete(tx.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded-md hover:bg-red-50" aria-label="Usuń transakcję">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                      </button>
+                      {pendingDeleteId === tx.id ? (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <button onClick={(e) => { e.stopPropagation(); handleConfirmDelete(tx.id); }} className="p-1 text-green-600 hover:text-green-700 transition-colors rounded-md hover:bg-green-50" aria-label="Potwierdź usunięcie" title="Tak, usuń">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation(); setPendingDeleteId(null); }} className="p-1 text-gray-400 hover:text-red-600 transition-colors rounded-md hover:bg-red-50" aria-label="Anuluj usuwanie" title="Nie, anuluj">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setPendingDeleteId(tx.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded-md hover:bg-red-50 group" aria-label="Usuń transakcję" title="Kliknij aby potwierdzić usunięcie">
+                          <svg className="w-4 h-4 opacity-50 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
