@@ -10,6 +10,7 @@ const ExpensesView = lazy(() => import('./pages/ExpensesView'));
 const CategoriesView = lazy(() => import('./pages/CategoriesView'));
 const BudzetyView = lazy(() => import('./pages/Budgets'));
 const TagsView = lazy(() => import('./pages/Tags'));
+const YearOverview = lazy(() => import('./pages/YearOverview'));
 
 function Spinner() {
   return (
@@ -94,6 +95,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute>
               <TagsView />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/year"
+          element={
+            <ProtectedRoute>
+              <YearOverview />
             </ProtectedRoute>
           }
         />

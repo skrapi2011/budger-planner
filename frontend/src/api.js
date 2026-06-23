@@ -232,3 +232,8 @@ export async function getRecentTransactions(limit) {
 export async function getBudgetsViewByMonth(monthStr) {
   return _fetch('/budgets/by-month-post', { method: 'POST', headers: getHeaders(true), body: JSON.stringify({ month: monthStr }) });
 }
+
+export async function getYearSummary(year) {
+  const yr = year || `${new Date().getFullYear()}`;
+  return _fetch('/stats/year-summary', { method: 'POST', headers: getHeaders(true), body: JSON.stringify({ year: yr }) });
+}
