@@ -1080,6 +1080,25 @@ def dashboard_data():
         ).fetchone()
         planned_total_all_time = round(float(planned_row_all_time["t"]) if planned_row_all_time["t"] else 0, 2)
 
+        # Previous month spending for comparison
+        prev_first_month = int(mon_s) == 1
+        if prev_first_month:
+            prev_year_val = int(year_s) - 1
+            prev_mon_val = 12
+        else:
+            prev_year_val = int(year_s)
+            prev_mon_val = int(mon_s) - 1
+        
+        prev_month_start = f"{prev_year_val}-{str(prev_mon_val).zfill(2)}-01"
+        nxt_prev_dt = datetime(prev_year_val, prev_mon_val, 1) + timedelta(days=32)
+        prev_next_month = f"{nxt_prev_dt.year}-{str(nxt_prev_dt.month).zfill(2)}-01"
+
+        prev_row = conn.execute(
+            "SELECT SUM(amount) AS t FROM Transactions WHERE user_id=? AND type='wydatek' AND date>=? AND date<?",
+            (g.current_user_id, prev_month_start, prev_next_month),
+        ).fetchone()
+        prev_month_spending = round(float(prev_row["t"]) if prev_row and prev_row["t"] else 0, 2)
+
       # Current month planned budgets only
         current_planned_row = conn.execute(
             """SELECT COALESCE(SUM(amount_monthly), 0) AS t FROM Budgets 
@@ -1140,6 +1159,7 @@ def dashboard_data():
         return jsonify({
                 "total_all_time": total_spending_all_time,
                 "month_total": month_spending,
+                "prev_month_total": prev_month_spending,
                 "planned_all_time": planned_total_all_time,
                 "current_planned": current_planned,
                 "chart_data": chart_data,
@@ -1215,9 +1235,15 @@ def year_summary():
             "Lipiec", "Sierpien", "Wrzesien", "Pazdziernik", "Listopad", "Grudzień"
         ]
 
+        now = datetime.now()
+        
         monthly_summary = []
         for m in range(1, 13):
             month_key = f"{start_year}-{str(m).zfill(2)}"
+            
+            if start_year == now.year and m > now.month:
+                break
+                
             mon_budgeted = budget_map.get(month_key, 0)
 
             first_d = f"{month_key}-01"
@@ -1234,8 +1260,9 @@ def year_summary():
                 "month": m,
                 "label": month_names_pl[m - 1],
                 "spending": actual,
-                "budgeted": mon_budgeted,
-                "variance": round(mon_budgeted - actual, 2),
+                "budget": mon_budgeted,
+                "balance": round(mon_budgeted - actual, 2),
+                "on_budget": True if (mon_budgeted == 0) else (actual <= mon_budgeted),
             })
 
       # Category variance for the year (top deviation per active category)

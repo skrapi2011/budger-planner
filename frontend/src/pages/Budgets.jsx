@@ -68,7 +68,8 @@ export default function Budzety({ user }) {
         setEditingBudgets({});
         setOriginalValues({});
       }
-      setBudgets(data || [] );
+      const sorted = (data || []).sort((a, b) => (Number(b.wydatki) || 0) - (Number(a.wydatki) || 0));
+      setBudgets(sorted);
     } finally {
       setLoading(false);
     }
@@ -93,17 +94,21 @@ export default function Budzety({ user }) {
   const totalSpent = budgets.reduce((sum, b) => sum + (Number(b.wydatki) || 0), 0);
   const overallPct = totalBudget > 0 ? Math.min(100, (totalSpent / totalBudget) * 100) : 0;
 
-  const handleSaveInline = async (budgetId, catKey) => {
-     const amt = editingBudgets[catKey];
-     if (!amt || amt <= 0) return;
-     setSavingId(budgetId);
-    try {
-      await api.updateBudget(budgetId, { amount_monthly: amt });
-      await loadBudgets(monthStr);
-    } catch { /* save failed */ } finally {
-      setSavingId(null);
-    }
-  };
+ const handleSaveInline = async (bud, catKey) => {
+      const amt = editingBudgets[catKey];
+       if (!amt || amt <= 0) return;
+      setSavingId(bud.id || bud.cat_id);
+     try {
+       if (bud.id !== null && bud.id !== undefined) {
+         await api.updateBudget(bud.id, { amount_monthly: amt });
+       } else {
+         await api.createBudget({ category_id: Number(bud.category_id), amount_monthly: amt, month_year: monthStr });
+       }
+       await loadBudgets(monthStr);
+     } catch { /* save failed */ } finally {
+       setSavingId(null);
+     }
+   };
 
   const hasMissingCategory = categories.some(c => !budgets.find(b => b.category_id === c.id));
 

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import * as api from '../api';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const GREEN = '#32a852';
 
@@ -42,7 +42,18 @@ export default function YearOverview({ user }) {
     );
   }
 
-  const { total_spending, total_budgeted, variance, avg_monthly_spending, avg_monthly_budgeted, spend_rate, monthly_summary, category_variance } = data;
+  const { total_spending, total_budgeted, variance, avg_monthly_spending, avg_monthly_budgeted, spend_rate, monthly_summary: rawMonthlySummary = [], category_variance } = data;
+
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // January is 1
+  
+  const monthly_summary = (rawMonthlySummary || []).filter(m => {
+    if (!m?.month) return false;
+    if (year > currentYear) return true;
+    return m.month <= currentMonth;
+  });
+
   const pctUsed = total_budgeted > 0 ? (total_spending / total_budgeted) * 100 : 0;
 
   return (
@@ -75,12 +86,13 @@ export default function YearOverview({ user }) {
             <p className="text-center text-gray-400 dark:text-slate-500 py-12">Brak danych. Dodaj transakcje aby zobaczyć wykres.</p>
           ) : (
             <ResponsiveContainer width={500} height={300}>
-              <BarChart data={monthly_summary.map(m => ({ label: m.label, spending: m.spending }))} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <LineChart data={monthly_summary.map(m => ({ label: m.label, spending: m.spending }))} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} width={60}/>
                 <Tooltip formatter={(v) => [formatMoney(v), null]} content={<CustomBarTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>\n              </BarChart>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>
+                <Line dataKey="spending" name="Wydatki" stroke={GREEN} strokeWidth={4} dot={{ r: 6, fill: '#fff', strokeWidth: 2, stroke: GREEN }} connectNulls />
+              </LineChart>
             </ResponsiveContainer>
           )}
         </div>
@@ -118,7 +130,7 @@ export default function YearOverview({ user }) {
                 return (
                   <div key={idx}>
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-700 dark:text-slate-300">{cv.category_name}</span>
+                      <span className="text-sm text-gray-700 dark:text-slate-300">{cv.name}</span>
                       <span className={`text-xs font-medium ${( cv.variance >= 0 ? 'text-green-600' : 'text-red-600')}`}>
                         {formatMoney(cv.variance)}
                       </span>

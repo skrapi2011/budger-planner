@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 let darkMQ = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
 function useDark() {
   const [dark, setDark] = useState(darkMQ?.matches ?? false);
@@ -104,16 +104,24 @@ export default function Dashboard({ user }) {
   };
 
   if (loading || !dashData) {
-    return (
-      <Layout username={user}>
-        <div className="flex items-center justify-center py-24">
-          <div className="w-10 h-10 border-4 border-gray-200 border-t-[#32a852] rounded-full animate-spin" />
-        </div>
-      </Layout>
-    );
+    return <Layout username={user}><div className="flex items-center justify-center py-24"><div className="w-10 h-10 border-4 border-gray-200 border-t-[#32a852] rounded-full animate-spin" /></div></Layout>;
   }
 
-  const { total_all_time = 0, month_total = 0, planned_all_time = 0, current_planned = 0, chart_data = [], monthly_history = [] } = dashData;
+  const { total_all_time = 0, prev_month_total = 0, month_total = 0, planned_all_time = 0, current_planned = 0, chart_data = [], monthly_history = [] } = dashData;
+
+  function getPrevMonthLabel() {
+    const [y, m] = monthStr.split('-').map(Number);
+    if (m === 1) return `${MONTH_NAMES[11]} ${y - 1}`;
+    return MONTH_NAMES[m - 2];
+  }
+
+  function getChangePct(current, previous) {
+    if ((previous ?? 0) === 0) return current > 0 ? null : 0;
+    const diff = ((current - previous) / previous) * 100;
+    return Math.round(diff);
+  }
+
+  const changePct = getChangePct(month_total, prev_month_total);
 
   return (
     <Layout username={user}>
@@ -132,10 +140,10 @@ export default function Dashboard({ user }) {
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <StatCard label={`Wydatki całość (${monthStr.split('-')[0]})`} value={total_all_time} badge={monthStr.split('-')[0]} icon={<IconAllTime />} color="#ef4444" />
-        <StatCard label="Wydatki w tym miesiącu" value={month_total} badge={`${MONTH_NAMES[parseInt(monthStr.split('-')[1], 10) - 1]}`} icon={<IconMonth />} color="#3b82f6" />
-        <StatCard label={`Planowane całość (${monthStr.split('-')[0]})`} value={planned_all_time} badge={monthStr.split('-')[0]} icon={<IconPlanned />} color="#f59e0b" />
-        <StatCard label="Budżet miesięczny" value={current_planned} badge={`${MONTH_NAMES[parseInt(monthStr.split('-')[1], 10) - 1]}`} icon={<IconCurrent />} color="#8b5cf6" />
+        <StatCard label="Budżet miesięczny" value={current_planned} icon={<IconCurrent />} color="#8b5cf6" />
+        <StatCard label="Wydatki w tym miesiącu" value={month_total} icon={<IconMonth />} color="#3b82f6" />
+        <StatCard2 label="Zmiana wydatków" change={changePct} absDiff={month_total - prev_month_total} monthStr={monthStr} icon={<IconChange />} color={changePct !== null ? (changePct > 0 ? '#ef4444' : '#32a852') : 'var(--tw-text-muted)'} />
+        <StatCard label="Wydatki całość" value={total_all_time} icon={<IconAllTime />} color="#ef4444" />
       </div>
 
       {/* Charts Row */}
@@ -285,19 +293,63 @@ function Card({ title, children }) {
 
 function StatCard({ label, value, icon, color, badge }) {
   return (
-   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
-      {badge && <span className="absolute top-3 right-4 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{badge}</span>}
-      <div className="flex items-center gap-3 mb-3">
-        <div style={{ backgroundColor: color + '20' }} className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
+     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
+       {badge && <span className="absolute top-3 right-4 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-0.5 rounded-full">{badge}</span>}
+       <div className="flex items-center gap-3 mb-3">
+         <div style={{ backgroundColor: color + '20' }} className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
+           {icon}
+         </div>
+         <span className="text-sm font-medium text-gray-600 dark:text-slate-400">{label}</span>
+       </div>
+
+       <p className={`text-2xl font-bold`} style={{ color }}>{formatMoney(value)}</p>
+     </div>
+   );
+ }
+
+
+function StatCard2({ label, change, absDiff: propAbsDiff, monthStr: ms, icon, color: arrowColor }) {
+  const [prevLabel, setPrevLabel] = useState('');
+
+  useEffect(() => {
+    if (!ms) return;
+    const [y, m] = ms.split('-').map(Number);
+    let py, pm;
+    if (m === 1) { py = y - 1; pm = 12; } else { py = y; pm = m - 1; }
+    setPrevLabel(`${MONTH_NAMES[pm - 1]} ${py}`);
+ }, [ms]);
+
+  const absDiffRaw = Number(propAbsDiff) || 0;
+  const sign = absDiffRaw >= 0 ? '+' : '';
+
+  return (
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
+      <div className="flex items-center gap-3 mb-1">
+        <div style={{ backgroundColor: arrowColor + '20' }} className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0">
           {icon}
         </div>
         <span className="text-sm font-medium text-gray-600 dark:text-slate-400">{label}</span>
       </div>
 
-      <p className={`text-2xl font-bold`} style={{ color }}>{formatMoney(value)}</p>
-    </div>
+      <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">
+        {ms ? MONTH_NAMES[parseInt(ms.split('-')[1], 10) - 1] : ''} vs {prevLabel || '—'}
+      </p>
+
+      <div className="flex items-baseline gap-3 flex-wrap">
+        <p className={`text-xl font-bold`} style={{ color: arrowColor }}>
+          {change !== null && change > 0 ? `↑ ${Math.abs(change)}%` : (change !== null ? `↓ ${Math.abs(change)}%` : '—')}
+        </p>
+        <p className={`text-lg font-bold`} style={{ color: arrowColor }}>
+          {sign}{formatMoney(absDiffRaw)}
+        </p>
+      </div>
+
+      <p className="text-xs text-gray-400 dark:text-slate-500 mt-1">
+        {change === null && 'Brak danych za poprzedni miesiąc'}
+      </p>
+   </div>
   );
-}
+ }
 
 function CategoryRow({ cat, isDark }) {
   const wydatki = cat.expenditure || 0;
@@ -347,6 +399,7 @@ function IconAllTime() { return <svg className="w-5 h-5 text-[#ef4444]" fill="no
 function IconMonth() { return <svg className="w-5 h-5 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 000-4H5a2 2 0 000 4z" /></svg>; }
 function IconPlanned() { return <svg className="w-5 h-5 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>; }
 function IconCurrent() { return <svg className="w-5 h-5 text-[#8b5cf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-3.866 0-7 1.567-7 3.5V14a2 2 0 002 2h2v-2.5m14 0H9" /></svg>; }
+function IconChange() { return <svg className="w-5 h-5 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>; }
 
 function formatMoney(v) {
   v = Number(v || 0);
