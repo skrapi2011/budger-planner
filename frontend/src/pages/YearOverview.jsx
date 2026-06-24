@@ -4,6 +4,7 @@ import * as api from '../api';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const GREEN = '#32a852';
+const BLUE_LINE = 'rgba(59, 130, 246, 0.6)';
 
 function getCurrentYear() {
   return new Date().getFullYear();
@@ -56,6 +57,13 @@ export default function YearOverview({ user }) {
 
   const pctUsed = total_budgeted > 0 ? (total_spending / total_budgeted) * 100 : 0;
 
+  // Chart data with both spending and budget for comparison
+  const chartData = monthly_summary.map(m => ({
+    label: m.label,
+    spending: m.spending,
+    budget: m.budget > 0 ? m.budget : null,
+  }));
+
   return (
     <Layout username={user}>
       {/* Year Navigation */}
@@ -86,12 +94,14 @@ export default function YearOverview({ user }) {
             <p className="text-center text-gray-400 dark:text-slate-500 py-12">Brak danych. Dodaj transakcje aby zobaczyć wykres.</p>
           ) : (
             <ResponsiveContainer width={500} height={300}>
-              <LineChart data={monthly_summary.map(m => ({ label: m.label, spending: m.spending }))} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+              <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-600" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} width={60}/>
                 <Tooltip formatter={(v) => [formatMoney(v), null]} content={<CustomBarTooltip />} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>
                 <Line dataKey="spending" name="Wydatki" stroke={GREEN} strokeWidth={4} dot={{ r: 6, fill: '#fff', strokeWidth: 2, stroke: GREEN }} connectNulls />
+                <Line type="monotone" dataKey="budget" name="Budżet" stroke={BLUE_LINE} strokeWidth={1.5} strokeDasharray="8 3" dot={false} connectNulls />
               </LineChart>
             </ResponsiveContainer>
           )}
@@ -191,14 +201,17 @@ function SummaryCard({ label, value, color = GREEN }) {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm hover:shadow-md transition-shadow p-5 relative overflow-hidden">
       <p className="text-sm font-medium text-gray-600 dark:text-slate-400 mb-2">{label}</p>
-      <p className={`text-2xl font-bold`} style={{ color }}>{value instanceof Number ? formatMoney(value) : value}</p>
+      <p className={`text-2xl font-bold`} style={{ color }}>
+        {typeof value === 'string' && value.endsWith('%') ? value : typeof value !== 'string' && (value == null || isNaN(parseFloat(value))) ? String(value) : formatMoney(value)}
+      </p>
     </div>
   );
 }
 
 function formatMoney(v) {
-  if (typeof v === 'string') return v;
-  const num = Number(v || 0);
+  if (typeof v === 'string' && v.endsWith('zł')) return v;
+  const num = Number(v);
+  if (isNaN(num)) return String(v);
   return `${num.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`;
 }
 

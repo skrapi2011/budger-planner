@@ -275,14 +275,14 @@ export default function Budzety({ user }) {
                               pattern="[0-9]*"
                               value={editingBudgets['cat_' + bud.cat_id] ?? ''}
                               onChange={(e) => { const v = e.target.value.replace(/[^0-9.]/g, ''); setEditingBudgets(prev => ({ ...prev, ['cat_' + bud.cat_id]: parseFloat(v || '') })) }}
-                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveInline(bud.id, 'cat_' + bud.cat_id); }}
+                             onKeyDown={(e) => { if (e.key === 'Enter') handleSaveInline(bud, 'cat_' + bud.cat_id); }}
                                                        className="w-28 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 outline-none focus:border-[#32a852] focus:ring-1 focus:ring-green-100 transition-all tabular-nums"
                                                        />
                                                       <span className="text-xs text-gray-400">PLN</span>
                                {editingBudgets['cat_' + bud.cat_id] !== originalValues['cat_' + bud.cat_id] && (
                                         <>
-                                          <button onClick={() => handleSaveInline(bud.id, 'cat_' + bud.cat_id)} disabled={savingId === bud.id} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors shadow-sm disabled:opacity-50">
-                                            {savingId === bud.id ? 'Zapisuję…' : 'Zapisz'}
+                                          <button onClick={() => handleSaveInline(bud, 'cat_' + bud.cat_id)} disabled={savingId === (bud.id || bud.cat_id)} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors shadow-sm disabled:opacity-50">
+                                            {savingId === (bud.id || bud.cat_id) ? 'Zapisuję…' : 'Zapisz'}
                                           </button>
                                           <button onClick={() => setEditingBudgets(prev => ({ ...prev, ['cat_' + bud.cat_id]: originalValues['cat_' + bud.cat_id] }))} className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-200 hover:bg-gray-300 text-gray-600 transition-colors">
                                             Anuluj
