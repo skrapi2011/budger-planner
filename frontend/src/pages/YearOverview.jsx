@@ -47,7 +47,7 @@ export default function YearOverview({ user }) {
 
   const now = new Date();
   const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1; // January is 1
+  const currentMonth = now.getMonth() + 1;
   
   const monthly_summary = (rawMonthlySummary || []).filter(m => {
     if (!m?.month) return false;
@@ -57,7 +57,6 @@ export default function YearOverview({ user }) {
 
   const pctUsed = total_budgeted > 0 ? (total_spending / total_budgeted) * 100 : 0;
 
-  // Chart data with both spending and budget for comparison
   const chartData = monthly_summary.map(m => ({
     label: m.label,
     spending: m.spending,
@@ -87,13 +86,12 @@ export default function YearOverview({ user }) {
 
       {/* Bar chart + category variance */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Spending trends bar chart */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
           <h3 className="text-base font-bold mb-4 text-gray-800 dark:text-slate-200">Wydatki w roku {year}</h3>
           {!monthly_summary || monthly_summary.length === 0 ? (
             <p className="text-center text-gray-400 dark:text-slate-500 py-12">Brak danych. Dodaj transakcje aby zobaczyć wykres.</p>
           ) : (
-            <ResponsiveContainer width={500} height={300}>
+            <ResponsiveContainer width="100%" height={300}>
               <LineChart data={chartData} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-600" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
@@ -107,51 +105,109 @@ export default function YearOverview({ user }) {
           )}
         </div>
 
-        {/* Progress overview */}
+         {/* Progress overview */}
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-5 hover:shadow-md transition-shadow">
           <h3 className="text-base font-bold mb-4 text-gray-800 dark:text-slate-200">Podsumowanie roku</h3>
 
           {/* Total budget bar */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700 dark:text-slate-300">Wykorzystanie budżetu rocznego</span>
-              <span className={`text-lg font-bold ${variance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatMoney(variance)}
-              </span>
-            </div>
+          <div>
+            {(() => {
+              const noBudget = total_budgeted <= 0;
+              return (
+                <>
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Saldo budżetu rocznego</h4>
 
-            <div className="w-full h-4 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-              <div className="h-full transition-all duration-500 rounded-full" style={{ width: `${Math.min(100, pctUsed)}%`, backgroundColor: variance >= 0 ? GREEN : '#ef4444' }} />
-            </div>
+                   {!noBudget && variance > 0 ? (
+                    <div className="flex items-end justify-between mb-1">
+                      <p className={`text-lg font-bold ${variance >= 0 ? 'text-[#32a852]' : 'text-red-600'}`}>
+                        {formatMoney(Math.abs(variance))}
+                      </p>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-bold text-gray-700 dark:text-slate-300">{((variance / total_budgeted) * 100).toFixed(1)}%</span>
+                        <span className="text-[10px] font-medium text-[#32a852] dark:text-green-400">Zaoszczędzone</span>
+                      </div>
+                    </div>
+                  ) : !noBudget && variance <= 0 ? (
+                    <div className="flex items-end justify-between mb-1">
+                      <p className={`text-lg font-bold ${variance >= 0 ? 'text-[#32a852]' : 'text-red-600'}`}>
+                        {formatMoney(Math.abs(variance))}
+                      </p>
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-bold text-gray-700 dark:text-slate-300">{((variance / total_budgeted) * 100).toFixed(1)}%</span>
+                        <span className="text-[10px] font-medium text-red-600 dark:text-red-400">Przekroczenie</span>
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className={`text-lg font-bold ${variance >= 0 ? 'text-[#32a852]' : 'text-red-600'}`}>
+                        {formatMoney(Math.abs(variance))}
+                      </p>
+                      {total_spending > 0 && (
+                        <p className="text-xs text-gray-500 dark:text-slate-500 mt-1">Nie ustawiono żadnych budżetów na ten rok</p>
+                      )}
+                    </>
+                  )}
 
-            <p className={`text-right text-sm font-bold mt-2 ${(total_budgeted <= 0 || monthly_summary[monthly_summary.length - 1]?.spending === 0) ? 'text-gray-400 dark:text-slate-500' : (variance >= 0 ? 'text-green-600' : 'text-red-600')}`}>
-              {total_budgeted <= 0 || monthly_summary[monthly_summary.length - 1]?.spending === 0 ? 'Brak danych' : `${(total_spending / total_budgeted * 100).toFixed(1)}%`}
-            </p>
+                  {noBudget ? null : total_spending > 0 ? (
+                    <>
+                      <div className="w-full h-4 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden mt-1.5 mb-1">
+                        <div
+                          className="h-full transition-all duration-500 rounded-full"
+                          style={{ width: `${Math.min(100, pctUsed)}%`, backgroundColor: variance >= 0 ? GREEN : '#ef4444' }}
+                        />
+                      </div>
+                      <p className="text-right text-xs text-gray-400 dark:text-slate-500">
+                        {formatMoney(total_spending)} / {formatMoney(total_budgeted)} ({pctUsed.toFixed(1)}%)
+                      </p>
+                    </>
+                  ) : total_spending > 0 ? (
+                    <p className="text-xs text-gray-400 dark:text-slate-600 mt-1">Brak danych</p>
+                  ) : null}
+                </>
+              );
+            })()}
           </div>
 
           {/* Category variance table */}
-          <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Odchylenia wg kategorii</h4>
+          <div>
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-slate-300 mb-2">Odchylenia wg kategorii</h4>
             {!category_variance || category_variance.length === 0 ? (
               <p className="text-center text-gray-400 dark:text-slate-500 py-6">Brak danych.</p>
-            ) : (
-              category_variance.slice(0, 8).map((cv, idx) => {
-                const catPct = cv.budget > 0 ? Math.max(5, (cv.spending / cv.budget) * 100) : (cv.spending > 0 ? 5 : 0);
-                return (
-                  <div key={idx}>
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-700 dark:text-slate-300">{cv.name}</span>
-                      <span className={`text-xs font-medium ${( cv.variance >= 0 ? 'text-green-600' : 'text-red-600')}`}>
-                        {formatMoney(cv.variance)}
-                      </span>
-                    </div>
-                    <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, catPct)}%`, backgroundColor: cv.variance >= 0 ? GREEN : '#ef4444' }} />
-                    </div>
-                  </div>
-                );
-              })
-            )}
+            ) : (() => {
+              const maxRatio = Math.max(...category_variance.map(cv=>cv.budget > 0 ? cv.spending/cv.budget : (cv.spending > 0 ? 2 : 0)));
+              const scaleMax = Math.min(maxRatio * 1.25, 2);
+              return (
+                <div style={{ maxHeight: '180px', overflowY: 'auto' }}>
+                  {category_variance.map((cv, idx) => {
+                    const ratio = cv.budget > 0 ? (cv.spending / cv.budget) : (cv.spending > 0 ? scaleMax*0.9 : 0);
+                    const barPct = Math.max(5, (ratio / scaleMax) * 100);
+                    return (
+                      <div key={idx} className="mb-3 last:mb-0">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm text-gray-700 dark:text-slate-300">{cv.name}</span>
+                          {cv.budget > 0 && cv.spending > 0 && (
+                            <span className="text-xs font-semibold text-gray-400 dark:text-slate-500">
+                              {((cv.spending / cv.budget) * 100).toFixed(0)}% budżetu
+                            </span>
+                          )}
+                          {cv.budget > 0 && (
+                            <div className="flex items-center gap-2 text-xs">
+                              <span className={`font-medium ${(cv.variance >= 0 ? 'text-green-600' : 'text-red-600')}`}>
+                                {formatMoney(cv.variance)}
+                              </span>
+                              <span className="text-gray-400 dark:text-slate-500">{formatMoney(cv.spending)}</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="w-full h-2 bg-gray-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${Math.min(100, barPct)}%`, backgroundColor: cv.variance >= 0 ? GREEN : '#ef4444' }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              );
+            })()}
           </div>
         </div>
       </div>
@@ -177,7 +233,9 @@ export default function YearOverview({ user }) {
                 {monthly_summary.map((m, idx) => (
                   <tr key={idx} className="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
                     <td className="py-3 px-4 font-medium text-gray-800 dark:text-slate-200">{m.label}</td>
-                    <td className="py-3 px-4 text-right text-gray-600 dark:text-slate-400">{formatMoney(m.budget)}</td>
+                    <td className={`py-3 px-4 text-right ${m.budget === 0 ? 'text-gray-400 dark:text-slate-600' : 'text-gray-600 dark:text-slate-400'}`}>
+                      {formatMoney(m.budget)}
+                    </td>
                     <td className="py-3 px-4 text-right font-medium text-red-600 dark:text-red-400">{formatMoney(m.spending)}</td>
                     <td className={`py-3 px-4 text-right font-bold ${m.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>{formatMoney(m.balance)}</td>
                     <td className="py-3 px-4 text-center">
@@ -220,14 +278,14 @@ function CustomBarTooltip({ active, payload }) {
   const d = payload[0].payload;
   return (
     <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg max-w-[240px]">
-      {d.label && <p style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
+      {d.label && <p style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }} className="text-gray-900 dark:text-white">{d.label}</p>}
       {payload.map((e) => {
         const val = Number(e.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return (
-          <div key={e.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
+          <div key={e.name} style={{ display:'flex', alignItems:'center' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:e.color, flexShrink:0 }} />
-            <span style={{ color:'#6b7280', fontSize:'13px' }}>{e.name}</span>
-            <strong>{val} zł</strong>
+            <span className="text-gray-600 dark:text-slate-400 text-xs mx-2">{e.name}</span>
+            <strong className="text-gray-900 dark:text-white">{val} zł</strong>
           </div>
         );
       })}

@@ -1262,7 +1262,7 @@ def year_summary():
                 "spending": actual,
                 "budget": mon_budgeted,
                 "balance": round(mon_budgeted - actual, 2),
-                "on_budget": True if (mon_budgeted == 0) else (actual <= mon_budgeted),
+                "on_budget": False if (mon_budgeted == 0 and actual > 0) else (True if (mon_budgeted == 0) else (actual <= mon_budgeted)),
             })
 
       # Category variance for the year (top deviation per active category)
