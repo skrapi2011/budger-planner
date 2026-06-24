@@ -501,7 +501,7 @@ def budgets_by_month():
                     COALESCE(b.amount_monthly, 0) AS budzet
             FROM Categories c
             LEFT JOIN Budgets b ON b.category_id=c.id AND b.month_year=? AND b.user_id=?
-            WHERE c.user_id=?""",
+            WHERE c.user_id=? AND COALESCE(c.active,1)=1""",
             (month, g.current_user_id, g.current_user_id),
         ).fetchall()
 
@@ -563,7 +563,7 @@ def budgets_by_month_post():
                     COALESCE(b.amount_monthly, 0) AS budzet
             FROM Categories c
             LEFT JOIN Budgets b ON b.category_id=c.id AND b.month_year=? AND b.user_id=?
-            WHERE c.user_id=?""",
+            WHERE c.user_id=? AND COALESCE(c.active,1)=1""",
             (month, g.current_user_id, g.current_user_id),
         ).fetchall()
 
