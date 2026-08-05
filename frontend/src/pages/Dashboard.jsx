@@ -1,18 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
-
-let darkMQ = typeof window !== 'undefined' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
-function useDark() {
-  const [dark, setDark] = useState(darkMQ?.matches ?? false);
-  useEffect(() => {
-    if (!darkMQ) return;
-    const handler = (e) => setDark(e.matches);
-    darkMQ.addEventListener('change', handler);
-    return () => darkMQ.removeEventListener('change', handler);
-  }, []);
-  return dark || false;
-}
 import Layout from '../components/Layout';
 import ModalDodajWydatek from '../components/ModalDodajWydatek';
+import { useTheme } from '../ThemeContext';
 import * as api from '../api';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -41,7 +30,7 @@ export default function Dashboard({ user }) {
   const [catBudgets, setCatBudgets] = useState([]);
   // Active categories for modal dropdown
   const [activeCategories, setActiveCategories] = useState([]);
-  const isDark = useDark();
+  const { isDark } = useTheme();
 
   useEffect(() => { loadDashboard(); }, [monthStr]);
 
@@ -228,15 +217,15 @@ export default function Dashboard({ user }) {
           ) : (
             <ResponsiveContainer width={550} height={340}>
               <BarChart data={getBarChartData()} margin={{ top: 10, right: 20, left: 10, bottom: 10 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <CartesianGrid strokeDasharray="3 3" stroke={isDark ? '#334155' : '#e5e7eb'} />
                 {timeFilter === '3m' || timeFilter === '6m' ? (
-                  <XAxis dataKey="label" tick={{fontSize:12}} angle={-45} textAnchor="end" height={80}/>
+                  <XAxis dataKey="label" tick={{fontSize:12, fill: isDark ? '#cbd5e1' : '#6b7280'}} angle={-45} textAnchor="end" height={80}/>
                 ) : (
-                  <XAxis dataKey="label" tick={{fontSize:12, fill:'#6b7280'}} interval={1} />
+                  <XAxis dataKey="label" tick={{fontSize:12, fill: isDark ? '#cbd5e1' : '#6b7280'}} interval={1} />
                 )}
-                <YAxis tick={{ fontSize: 12 }} width={60}/>
+                <YAxis tick={{ fontSize: 12, fill: isDark ? '#cbd5e1' : '#6b7280' }} width={60}/>
                 <Tooltip formatter={(value) => [formatMoney(value), null]} content={<CustomBarTooltip />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>
+                <Legend iconType="circle" wrapperStyle={{ fontSize: '13px', color: isDark ? '#cbd5e1' : '#374151' }}/>
                 <Bar dataKey="actual" name={timeFilter === 'all' ? 'Rzeczywiste (wszystkie)' : `Rzeczywiste (${timeFilter})`} fill={GREEN} radius={[6, 6, 0, 0]} barSize={20} />
               </BarChart>
             </ResponsiveContainer>
@@ -361,7 +350,7 @@ function CustomTooltip({ active, payload }) {
         return (
           <div key={p.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:p.color, flexShrink:0 }} />
-            <span>{p.name}: {val} zł</span>
+            <span className="dark:text-slate-200">{p.name}: {val} zł</span>
           </div>
         );
       })}
@@ -375,7 +364,7 @@ function CustomBarTooltip({ active, payload }) {
   const seenNames = new Set();
   return (
      <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg max-w-[240px]">
-      {d.label && <p style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
+      {d.label && <p className="dark:text-slate-200" style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
       {payload.map((e) => {
         const val = Number(e.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (seenNames.has(e.name)) return null;
@@ -383,8 +372,8 @@ function CustomBarTooltip({ active, payload }) {
         return (
           <div key={e.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:e.color, flexShrink:0 }} />
-            <span style={{ color:'#6b7280', fontSize:'13px' }}>{e.name}</span>
-            <strong>{val} zł</strong>
+            <span className="dark:text-slate-400" style={{ fontSize:'13px' }}>{e.name}</span>
+            <strong className="dark:text-slate-200">{val} zł</strong>
           </div>
         );
       })}
