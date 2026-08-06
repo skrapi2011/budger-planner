@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import * as api from './api';
-import { dispatchAuthToast, onAuthToast } from './components/ui/authEvents';
+import { dispatchAuthToast } from './components/ui/authEvents';
 
 const AuthContext = createContext(null);
 
@@ -60,7 +60,6 @@ export function AuthProvider({ children }) {
           setUser(null);
           setToken(null);
           dispatchAuthToast('Sesja wygasła. Zaloguj się ponownie.', 'error');
-          window.location.href = '/login';
         }
       }
 

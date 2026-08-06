@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { onAuthToast } from './authEvents';
 
 const ToastContext = createContext(null);
@@ -70,14 +70,15 @@ export function ToastProvider({ children }) {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  const toast = useCallback((message, type = 'info') => addToast(message, type), [addToast]);
-  toast.success = useCallback((message) => addToast(message, 'success'), [addToast]);
-  toast.error = useCallback((message) => addToast(message, 'error'), [addToast]);
-  toast.warning = useCallback((message) => addToast(message, 'warning'), [addToast]);
-  toast.info = useCallback((message) => addToast(message, 'info'), [addToast]);
+  const value = useMemo(() => ({
+    success: (message) => addToast(message, 'success'),
+    error: (message) => addToast(message, 'error'),
+    warning: (message) => addToast(message, 'warning'),
+    info: (message) => addToast(message, 'info'),
+  }), [addToast]);
 
   return (
-    <ToastContext.Provider value={toast}>
+    <ToastContext.Provider value={value}>
       {children}
       <div className="fixed top-4 right-4 z-[9999] flex flex-col gap-2 max-w-sm w-full pointer-events-none" aria-live="polite">
         {toasts.map(t => (

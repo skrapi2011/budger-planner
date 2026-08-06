@@ -17,10 +17,8 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
 
   // Scroll lock
   useEffect(() => {
-    if (true) {
-      previouslyFocused.current = document.activeElement;
-      document.body.classList.add('scroll-lock');
-    }
+    previouslyFocused.current = document.activeElement;
+    document.body.classList.add('scroll-lock');
     return () => {
       document.body.classList.remove('scroll-lock');
     };
@@ -187,7 +185,7 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
                 onChange={(e) => { setAmount(e.target.value); setError(null); }}
                 placeholder="np. 500.00"
                 className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm outline-none transition-all pr-12 dark:bg-slate-700 dark:text-white ${
-                  error ? ' red-400 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-[#32a852] focus:ring-2 focus:ring-green-100 dark:border-slate-600'
+                  error ? 'border-red-400 focus:border-red-400 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-[#32a852] focus:ring-2 focus:ring-green-100 dark:border-slate-600'
                 }`}
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-slate-500">PLN</span>

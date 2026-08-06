@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 export default function ConfirmDialog({
   isOpen,
@@ -11,6 +11,7 @@ export default function ConfirmDialog({
   onCancel,
 }) {
   const confirmRef = useRef(null);
+  const rootRef = useRef(null);
 
   useEffect(() => {
     if (isOpen && confirmRef.current) {
@@ -19,42 +20,40 @@ export default function ConfirmDialog({
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !rootRef.current) return;
+
+    const dialog = rootRef.current;
+    const focusable = dialog.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
 
     const handleEscape = (e) => {
       if (e.key === 'Escape') onCancel();
     };
 
     const handleFocusTrap = (e) => {
-      const dialog = e.currentTarget;
-      const focusable = dialog.querySelectorAll(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (e.key === 'Tab') {
-        if (e.shiftKey) {
-          if (document.activeElement === first) {
-            e.preventDefault();
-            last.focus();
-          }
-        } else {
-          if (document.activeElement === last) {
-            e.preventDefault();
-            first.focus();
-          }
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
         }
       }
     };
 
     document.addEventListener('keydown', handleEscape);
-    const dialogEl = document.getElementById('confirm-dialog-root');
-    if (dialogEl) dialogEl.addEventListener('focus', handleFocusTrap, true);
+    document.addEventListener('keydown', handleFocusTrap);
 
     return () => {
       document.removeEventListener('keydown', handleEscape);
-      if (dialogEl) dialogEl.removeEventListener('focus', handleFocusTrap, true);
+      document.removeEventListener('keydown', handleFocusTrap);
     };
   }, [isOpen, onCancel]);
 
@@ -62,7 +61,7 @@ export default function ConfirmDialog({
 
   return (
     <div
-      id="confirm-dialog-root"
+      ref={rootRef}
       className="fixed inset-0 z-[10000] flex items-center justify-center"
       onClick={(e) => {
         if (e.target === e.currentTarget) onCancel();
