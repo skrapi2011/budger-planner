@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider, useAuth } from './AuthContext';
 import { ThemeProvider } from './ThemeContext';
+import { ToastProvider } from './components/ui/Toast';
 
 const LoginPage = lazy(() => import('./pages/LoginPage'));
 const RegisterPage = lazy(() => import('./pages/RegisterPage'));
@@ -20,7 +21,14 @@ function Spinner() {
 }
 
 function ProtectedRoute({ children }) {
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
+  if (!authReady) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-8 h-8 border-4 border-[#32a852]/20 border-t-[#32a852] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   if (!user) {
     return <Navigate to="/login" replace />;
   }
@@ -28,7 +36,14 @@ function ProtectedRoute({ children }) {
 }
 
 const UnprotectedRoute = ({ children, redirect = "/dashboard" }) => {
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
+  if (!authReady) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-8 h-8 border-4 border-[#32a852]/20 border-t-[#32a852] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   if (user) {
     return <Navigate to={redirect} replace />;
   }
@@ -36,7 +51,14 @@ const UnprotectedRoute = ({ children, redirect = "/dashboard" }) => {
 };
 
 const IndexGate = () => {
-  const { user } = useAuth();
+  const { user, authReady } = useAuth();
+  if (!authReady) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="w-8 h-8 border-4 border-[#32a852]/20 border-t-[#32a852] rounded-full animate-spin"></div>
+      </div>
+    );
+  }
   return user ? (
     <Navigate to="/dashboard" replace />
   ) : (
@@ -112,12 +134,14 @@ function AppRoutes() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <BrowserRouter>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </BrowserRouter>
-    </ThemeProvider>
+    <ToastProvider>
+      <ThemeProvider>
+        <BrowserRouter>
+          <AuthProvider>
+            <AppRoutes />
+          </AuthProvider>
+        </BrowserRouter>
+      </ThemeProvider>
+    </ToastProvider>
   );
 }

@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import * as api from '../api';
+import { useToast } from '../components/ui/Toast';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { ListSkeleton } from '../components/ui/Skeleton';
+import { formatPLN } from '../utils/format';
 
 export default function Tags({ user }) {
+  const toast = useToast();
   const [transactions, setTransactions] = useState([]);
   const [tags, setTags] = useState([]);
   const [selectedTag, setSelectedTag] = useState(null);
@@ -10,6 +15,7 @@ export default function Tags({ user }) {
   const [editId, setEditId] = useState(null);
   const [editingName, setEditingName] = useState('');
   const [loading, setLoading] = useState(true);
+  const [confirmRemove, setConfirmRemove] = useState(null);
 
   useEffect(() => { loadAll(); }, []);
 
@@ -65,17 +71,22 @@ export default function Tags({ user }) {
     try {
       await api.updateTransactionTags(txId, [...(transactions.find(t => t.id === txId)?.tags || []), tagText.trim()]);
       loadAll();
+      toast.success('Tag dodany');
     } catch (err) {
-      alert(err.message);
+      toast.error(err.message || 'Nie udało się dodać tagu');
     }
   };
 
   const removeTag = async (tagToRemove) => {
-    if (!confirm('Remove this tag from all transactions?')) return;
     try {
       await api.deleteTag(tagToRemove);
       loadAll();
-    } catch {}
+      toast.success('Tag usunięty');
+    } catch {
+      toast.error('Nie udało się usunąć tagu');
+    } finally {
+      setConfirmRemove(null);
+    }
   };
 
   const startEditing = (tag) => {
@@ -99,9 +110,7 @@ export default function Tags({ user }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin dark:border-slate-700 dark:border-t-blue-400" />
-        </div>
+        <ListSkeleton count={6} />
       ) : (
         <>
           {/* New tag input */}
@@ -143,7 +152,7 @@ export default function Tags({ user }) {
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" /></svg>
                               </button>
                               <button
-                                onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
+                                onClick={(e) => { e.stopPropagation(); setConfirmRemove(tag); }}
                                 className="p-1 text-gray-400 hover:text-red-500"
                               >
                                 <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -204,6 +213,17 @@ export default function Tags({ user }) {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmRemove !== null}
+        title="Usuń tag"
+        message="Czy na pewno chcesz usunąć tag ze wszystkich transakcji?"
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+        danger
+        onConfirm={() => removeTag(confirmRemove)}
+        onCancel={() => setConfirmRemove(null)}
+      />
     </Layout>
   );
 }
@@ -223,7 +243,7 @@ function TransactionRow({ tx }) {
       )}
 
       <span className={`font-semibold shrink-0 ${(typeof tx.amount === 'number' ? tx.amount : parseFloat(tx.amount)) > 0 && (tx.type || '') !== 'Przychod' ? 'text-red-500' : 'text-blue-600'} ml-3`}>
-        {Math.abs(Number(tx.amount) || 0).toFixed(2)} PLN
+        {formatPLN(Math.abs(Number(tx.amount) || 0))}
       </span>
 
       <button onClick={() => window.location.href = '/wydatki'} className="ml-3 p-1.5 text-gray-400 hover:text-blue-600 rounded-md">

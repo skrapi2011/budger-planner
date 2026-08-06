@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import * as api from '../api';
 import AddBudgetModal from '../components/AddBudgetModal';
+import { StatCardSkeleton, CardSkeleton } from '../components/ui/Skeleton';
+import { formatPLN } from '../utils/format';
 
 const MONTH_NAMES = [
   'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
@@ -113,8 +115,23 @@ export default function Budzety({ user }) {
   return (
     <Layout username={user}>
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-green-200 border-t-[#32a852] rounded-full animate-spin dark:border-slate-700" />
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="skeleton w-10 h-10 rounded-lg" />
+            <div className="skeleton w-48 h-7" />
+            <div className="skeleton w-10 h-10 rounded-lg" />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+            <StatCardSkeleton />
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+            <CardSkeleton />
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -140,7 +157,7 @@ export default function Budzety({ user }) {
                 {getSummaryIcon(overallPct >= 80 ? 'przekroczony' : 'ok')}
                 <div className="relative mt-4">
                   <p className="text-green-100 text-sm font-medium">Całkowity budżet</p>
-                  <p className="text-3xl font-bold mt-1">{totalBudget.toFixed(2)} PLN</p>
+                  <p className="text-3xl font-bold mt-1">{formatPLN(totalBudget)}</p>
                 </div>
               </div>,
               <div key="spent" className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 dark:bg-slate-800 dark:border-slate-700">
@@ -152,7 +169,7 @@ export default function Budzety({ user }) {
                     <span className="px-2 py-0.5 rounded-full bg-green-100 text-[#32a852] text-xs font-semibold dark:bg-green-900/40">OK</span>
                   )}
                 </div>
-                <p className="text-3xl font-bold text-gray-800 dark:text-slate-200">{totalSpent.toFixed(2)} PLN</p>
+                <p className="text-3xl font-bold text-gray-800 dark:text-slate-200">{formatPLN(totalSpent)}</p>
                 {totalBudget > 0 && (
                   <p className="text-sm text-gray-400 mt-1 dark:text-slate-500">{overallPct.toFixed(1)}% wykorzystane</p>
                 )}
@@ -161,7 +178,7 @@ export default function Budzety({ user }) {
                 <p className="text-sm font-medium text-gray-500 mb-3 dark:text-slate-400">Pozostało</p>
                 {(totalBudget - totalSpent) >= 0 ? (
                   <>
-                    <p className="text-3xl font-bold text-[#32a852]">{(totalBudget - totalSpent).toFixed(2)} PLN</p>
+                    <p className="text-3xl font-bold text-[#32a852]">{formatPLN(totalBudget - totalSpent)}</p>
                     {totalBudget > 0 && (
                       <div className="mt-2 w-full bg-gray-200 rounded-full h-2 overflow-hidden dark:bg-slate-700">
                         <div style={{ width: `${Math.max(Math.round(((totalBudget - totalSpent) / totalBudget) * 100), (totalSpent > 0 ? 5 : 0))}%` }} className="bg-[#32a852] h-2 rounded-full transition-all duration-500" />
@@ -170,8 +187,8 @@ export default function Budzety({ user }) {
                   </>
                 ) : (
                   <>
-                    <p className="text-3xl font-bold text-red-600">-{Math.abs(totalBudget - totalSpent).toFixed(2)} PLN</p>
-                    <p className="text-sm text-red-500 mt-1">Przekroczono budżet o {totalSpent.toFixed(2)} PLN</p>
+                    <p className="text-3xl font-bold text-red-600">-{formatPLN(Math.abs(totalBudget - totalSpent))}</p>
+                    <p className="text-sm text-red-500 mt-1">Przekroczono budżet o {formatPLN(totalSpent)}</p>
                   </>
                 )}
               </div>,
@@ -237,7 +254,7 @@ export default function Budzety({ user }) {
                       </div>
                       {limit > 0 && (
                         <span className={`text-base font-bold tabular-nums ${remainder >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {remainder >= 0 ? '' : '-'}{Math.abs(remainder).toFixed(2)} PLN
+                          {remainder >= 0 ? '' : '-'}{formatPLN(Math.abs(remainder))}
                         </span>
                       )}
                     </div>
@@ -250,7 +267,7 @@ export default function Budzety({ user }) {
                             <div style={{ width: `${Math.max(pct, spent > 0 ? 5 : 0)}%` }} className={`h-3 rounded-full transition-all duration-700 ${statusInfo.bg}`} />
                           </div>
                           <div className="flex justify-between mt-2">
-                            <span className="text-xs text-gray-400 font-medium dark:text-slate-500">{spent.toFixed(2)} PLN wydane</span>
+                            <span className="text-xs text-gray-400 font-medium dark:text-slate-500">{formatPLN(spent)} wydane</span>
                             <span className="text-xs text-gray-400 font-medium dark:text-slate-500">{pct >= 100 ? Math.round(pct) + '%' : pct.toFixed(1) + '%'}</span>
                           </div>
                         </>

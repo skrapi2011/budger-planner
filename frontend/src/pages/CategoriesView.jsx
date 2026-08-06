@@ -1,10 +1,14 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import * as api from '../api';
+import { useToast } from '../components/ui/Toast';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { TableSkeleton } from '../components/ui/Skeleton';
 
 const ICON_OPTIONS = '\u{1F3C9}\u{1F697}\u{1F3E0}\u{1F3AE}\u{1F48A}\u{1F4DA}\u{1F455}\u{1F4F1}\u{1F3E1}\u{1F381}\u{1F6C6}\u{1F3AF}\u{1F4B0}\u{1F527}'.split('');
 
 export default function CategoriesView({ user }) {
+  const toast = useToast();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -12,6 +16,7 @@ export default function CategoriesView({ user }) {
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState('#32a852');
   const [newIcon, setNewIcon] = useState('\u{1F4C1}');
+  const [confirmDelete, setConfirmDelete] = useState(null);
 
   useEffect(() => { loadCategories(); }, []);
 
@@ -33,7 +38,8 @@ export default function CategoriesView({ user }) {
       setNewIcon('\u{1F4C1}');
       setShowForm(false);
       loadCategories();
-    } catch (err) { alert(err.message || 'Nie udalo sie dodac kategorii'); }
+      toast.success('Kategoria dodana');
+    } catch (err) { toast.error(err.message || 'Nie udało się dodać kategorii'); }
   };
 
   const handleUpdateCategory = async () => {
@@ -41,16 +47,19 @@ export default function CategoriesView({ user }) {
        await api.updateCategory(editing.id, { name: editing.name, color: editing.color, icon: editing.icon, active: editing.active });
        setEditing(null);
        loadCategories();
-     } catch (err) { alert(err.message || 'Nie udalo sie zaktualizowac kategorii'); }
+       toast.success('Kategoria zaktualizowana');
+     } catch (err) { toast.error(err.message || 'Nie udało się zaktualizować kategorii'); }
    };
 
   const handleDelete = async () => {
-    if (!editing || !confirm('Usunąć tę kategorię?')) return;
+    if (!confirmDelete) return;
     try {
-      await api.deleteCategory(editing.id);
+      await api.deleteCategory(confirmDelete);
       setEditing(null);
       loadCategories();
-    } catch (err) { alert(err.message || 'Nie udalo sie usunac kategorii'); }
+      toast.success('Kategoria usunięta');
+    } catch (err) { toast.error(err.message || 'Nie udało się usunąć kategorii'); }
+    finally { setConfirmDelete(null); }
   };
 
   const handleToggleActive = async () => {
@@ -60,7 +69,7 @@ export default function CategoriesView({ user }) {
       const newActiveValue = editing.active === 0 || editing.active === false ? 1 : 0;
       setEditing({ ...editing, active: newActiveValue });
       setCategories(prev => prev.map(c => c.id === editing.id ? { ...c, active: newActiveValue } : c));
-    } catch (err) { alert(err.message || 'Nie udalo sie zaktualizowac kategorii'); }
+    } catch (err) { toast.error(err.message || 'Nie udało się zaktualizować kategorii'); }
   };
 
   const quickSelectIcon = (icon) => setNewIcon(icon);
@@ -73,9 +82,7 @@ export default function CategoriesView({ user }) {
       </div>
 
       {loading && (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#32a852]20 border-t-[#32a852] rounded-full animate-spin" />
-        </div>
+        <TableSkeleton rows={6} cols={4} />
       )}
 
       {!loading && (
@@ -115,7 +122,7 @@ export default function CategoriesView({ user }) {
                     {!!editing.active ? 'Dezaktywuj kategorię' : 'Aktywuj kategorię'}
                   </button>
 
-                  <button onClick={handleDelete} className="w-full px-3 py-1.5 text-xs font-medium rounded-md text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-slate-700 transition-colors">Usuń kategorię</button>
+                  <button onClick={() => setConfirmDelete(editing.id)} className="w-full px-3 py-1.5 text-xs font-medium rounded-md text-red-700 border border-red-300 hover:bg-red-50 dark:hover:bg-slate-700 transition-colors">Usuń kategorię</button>
                 </div>
               </div>
             ) : showForm ? (
@@ -202,6 +209,17 @@ export default function CategoriesView({ user }) {
           </div>
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDelete !== null}
+        title="Usuń kategorię"
+        message="Czy na pewno chcesz usunąć tę kategorię?"
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+        danger
+        onConfirm={handleDelete}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </Layout>
   );
 }

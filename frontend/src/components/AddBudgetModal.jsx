@@ -9,10 +9,66 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
   const [fallbackCategories, setFallbackCategories] = useState([]);
   const [catsLoading, setCatsLoading] = useState(false);
   const hasFetchedRef = useRef(false);
+  const modalRef = useRef(null);
+  const previouslyFocused = useRef(null);
 
-  // Use fallback categories when prop is missing/empty (race condition guard)
   const hasPropCats = Array.isArray(categories) && categories.length > 0;
   const effectiveCats = hasPropCats ? categories : fallbackCategories;
+
+  // Scroll lock
+  useEffect(() => {
+    if (true) {
+      previouslyFocused.current = document.activeElement;
+      document.body.classList.add('scroll-lock');
+    }
+    return () => {
+      document.body.classList.remove('scroll-lock');
+    };
+  }, []);
+
+  // Focus trap
+  useEffect(() => {
+    if (!modalRef.current) return;
+
+    const focusableElements = modalRef.current.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    const firstFocusable = focusableElements[0];
+    const lastFocusable = focusableElements[focusableElements.length - 1];
+
+    const handleFocusTrap = (e) => {
+      if (e.key !== 'Tab') return;
+      if (e.shiftKey) {
+        if (document.activeElement === firstFocusable) {
+          e.preventDefault();
+          lastFocusable.focus();
+        }
+      } else {
+        if (document.activeElement === lastFocusable) {
+          e.preventDefault();
+          firstFocusable.focus();
+        }
+      }
+    };
+
+    const handleEscape = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+
+    document.addEventListener('keydown', handleFocusTrap);
+    document.addEventListener('keydown', handleEscape);
+
+    requestAnimationFrame(() => {
+      const firstInput = modalRef.current?.querySelector('button, input, select');
+      firstInput?.focus();
+    });
+
+    return () => {
+      document.removeEventListener('keydown', handleFocusTrap);
+      document.removeEventListener('keydown', handleEscape);
+      previouslyFocused.current?.focus();
+    };
+  }, []);
 
   useEffect(() => {
     const needsFetch = !Array.isArray(categories) || categories.length === 0;
@@ -26,7 +82,6 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
       .finally(() => setCatsLoading(false));
   }, [categories]);
 
-  // when categories load, auto-select if none selected yet
   useEffect(() => {
     const preferred = initialCategoryId?.toString();
     if (preferred && effectiveCats.some(c => c.id?.toString() === preferred)) {
@@ -61,11 +116,20 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center" onClick={(e) => e.target === e.currentTarget && onClose()}>
-      {/* backdrop */}
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center transition-all duration-300"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
+      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" />
 
-      <div className="relative z-10 w-full max-w-md mx-4 rounded-xl bg-white shadow-2xl border border-gray-100 overflow-hidden dark:bg-slate-800 dark:border-slate-700">
+      <div
+        ref={modalRef}
+        className="relative z-10 w-full max-w-md mx-4 rounded-2xl bg-white shadow-2xl border border-gray-100 overflow-hidden animate-slide-up dark:bg-slate-800 dark:border-slate-700"
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Nowy budżet"
+      >
         {/* header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 bg-gradient-to-r from-[#32a852] to-[#1f8c42] text-white">
           <h3 className="text-lg font-bold">Nowy budżet</h3>
@@ -113,32 +177,34 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded,
           {/* amount */}
           <div>
             <label htmlFor="budgetAmount" className="block text-sm font-medium text-gray-600 mb-1.5 dark:text-slate-300">Kwota budżetu (PLN)</label>
-            <input
-              id="budgetAmount"
-              type="number"
-              step="0.01"
-              min="0"
-              value={amount}
-              onChange={(e) => { setAmount(e.target.value); setError(null); }}
-              placeholder="np. 500.00"
-              className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm outline-none transition-all dark:bg-slate-700 dark:text-white ${
-                error ? 'border-red-400 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-[#32a852] focus:ring-2 focus:ring-green-100 dark:border-slate-600'
-              }`}
-            />
+            <div className="relative">
+              <input
+                id="budgetAmount"
+                type="number"
+                step="0.01"
+                min="0"
+                value={amount}
+                onChange={(e) => { setAmount(e.target.value); setError(null); }}
+                placeholder="np. 500.00"
+                className={`w-full px-4 py-2.5 bg-gray-50 border rounded-lg text-sm outline-none transition-all pr-12 dark:bg-slate-700 dark:text-white ${
+                  error ? ' red-400 focus:ring-2 focus:ring-red-200' : 'border-gray-200 focus:border-[#32a852] focus:ring-2 focus:ring-green-100 dark:border-slate-600'
+                }`}
+              />
+              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400 dark:text-slate-500">PLN</span>
+            </div>
+            {error && (
+              <p className="flex items-center gap-2 text-sm font-medium text-red-600 mt-1.5 dark:text-red-400">
+                <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                {error}
+              </p>
+            )}
           </div>
-
-          {error && (
-            <p className="flex items-center gap-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2 dark:bg-red-950/40 dark:border-red-800/60 dark:text-red-400">
-              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-              {error}
-            </p>
-          )}
 
           {/* actions */}
           <div className="flex gap-3">
             <button type="button" onClick={onClose} disabled={loading} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors disabled:opacity-50 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300">Anuluj</button>
             <button type="submit" disabled={loading} className="flex-1 px-4 py-2.5 rounded-lg text-sm font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors shadow-md disabled:opacity-50 disabled:cursor-wait">
-              {loading ? 'Dodaję…' : 'Dodaj budżet'}
+              {loading ? 'Dodaję...' : 'Dodaj budżet'}
             </button>
           </div>
         </form>

@@ -1,6 +1,10 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
 import AddExpenseModal from '../components/AddExpenseModal';
+import { useToast } from '../components/ui/Toast';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
+import { ListSkeleton } from '../components/ui/Skeleton';
+import { formatPLN } from '../utils/format';
 import * as api from '../api';
 
 const MONTH_NAMES = [
@@ -14,6 +18,7 @@ function getCurrentMonth() {
 }
 
 export default function ExpensesView({ user }) {
+  const toast = useToast();
   const [transactions, setTransactions] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,13 +27,16 @@ export default function ExpensesView({ user }) {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // Confirm dialog state
+  const [confirmDelete, setConfirmDelete] = useState(null);
+
   useEffect(() => { loadExpenses(); }, [monthStr]);
 
   async function loadExpenses() {
     setLoading(true);
     try {
       const catsPromise = api.getCategories(true).catch(() => []);
-      const txnsPromise = api.getTransactionsAll().catch(() => []);
+      const txnsPromise = api.getTransactionsAll(monthStr).catch(() => []);
       const [catList, txnList] = await Promise.all([catsPromise, txnsPromise]);
       setCategories(catList || []);
       setTransactions(txnList || []);
@@ -52,16 +60,29 @@ export default function ExpensesView({ user }) {
   };
 
   const handleAddExpense = async (data) => {
-    await api.addTransaction({ ...data });
-    loadExpenses();
+    try {
+      await api.addTransaction({ ...data });
+      toast.success('Transakcja dodana');
+      loadExpenses();
+    } catch (err) {
+      toast.error(err.message || 'Nie udało się dodać transakcji');
+    }
   };
 
-  const handleDelete = async (id) => {
-    if (!confirm('Usunąć tę transakcję?')) return;
+  const handleDelete = (id) => {
+    setConfirmDelete(id);
+  };
+
+  const confirmDeleteTransaction = async () => {
     try {
-      await api.deleteTransaction(id);
+      await api.deleteTransaction(confirmDelete);
+      toast.success('Transakcja usunięta');
       loadExpenses();
-    } catch {}
+    } catch {
+      toast.error('Nie udało się usunąć transakcji');
+    } finally {
+      setConfirmDelete(null);
+    }
   };
 
   const filteredByCategory = selectedCategory === 'all'
@@ -106,8 +127,13 @@ export default function ExpensesView({ user }) {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-16">
-          <div className="w-8 h-8 border-4 border-[#32a852]20 border-t-[#32a852] rounded-full animate-spin" />
+        <div className="space-y-4">
+          <div className="flex gap-3 mb-4">
+            <div className="skeleton w-32 h-10 rounded-md" />
+            <div className="skeleton w-40 h-10 rounded-md" />
+            <div className="skeleton flex-1 h-10 rounded-md" />
+          </div>
+          <ListSkeleton count={5} />
         </div>
       ) : (
         <>
@@ -137,7 +163,7 @@ export default function ExpensesView({ user }) {
                 <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700" style={{ backgroundColor: `${g.color}15` }}>
                   <h3 className="font-medium text-gray-800 dark:text-slate-200 flex items-center gap-2">
                     {g.icon && <span>{g.icon}</span>}
-                    {g.name} <span className="text-sm font-normal text-gray-400 dark:text-slate-500">({g.total.toFixed(2)} PLN)</span>
+                    {g.name} <span className="text-sm font-normal text-gray-400 dark:text-slate-500">({formatPLN(g.total)})</span>
                   </h3>
                 </div>
 
@@ -150,8 +176,8 @@ export default function ExpensesView({ user }) {
 
                     <div className="flex items-center gap-3 shrink-0 ml-4">
                       <time className="text-xs text-gray-400 whitespace-nowrap">{tx.date}</time>
-                      <span className={`font-semibold whitespace-nowrap ${tx.type === 'Przychód' ? 'text-green-600' : 'text-red-500'}`}>
-                        {tx.amount.toFixed(2)} PLN
+                      <span className={`font-semibold whitespace-nowrap ${tx.type === 'Przychod' ? 'text-green-600' : 'text-red-500'}`}>
+                        {formatPLN(tx.amount)}
                       </span>
                       <button onClick={() => handleDelete(tx.id)} className="p-1.5 text-gray-400 hover:text-red-600 transition-colors rounded-md hover:bg-red-50" aria-label="Usuń transakcję">
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
@@ -164,6 +190,17 @@ export default function ExpensesView({ user }) {
           )}
         </>
       )}
+
+      <ConfirmDialog
+        isOpen={confirmDelete !== null}
+        title="Usuń transakcję"
+        message="Czy na pewno chcesz usunąć tę transakcję?"
+        confirmLabel="Usuń"
+        cancelLabel="Anuluj"
+        danger
+        onConfirm={confirmDeleteTransaction}
+        onCancel={() => setConfirmDelete(null)}
+      />
     </Layout>
   );
 }

@@ -3,6 +3,8 @@ import Layout from '../components/Layout';
 import AddExpenseModal from '../components/AddExpenseModal';
 import { useTheme } from '../ThemeContext';
 import * as api from '../api';
+import { StatCardSkeleton, ChartSkeleton, CardSkeleton } from '../components/ui/Skeleton';
+import { formatPLN } from '../utils/format';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const MONTH_NAMES = [
@@ -96,8 +98,24 @@ export default function Dashboard({ user }) {
   if (loading || !dashData) {
     return (
       <Layout username={user}>
-        <div className="flex items-center justify-center py-24">
-          <div className="w-10 h-10 border-4 border-gray-200 border-t-[#32a852] rounded-full animate-spin" />
+        <div className="flex items-center justify-between mb-8">
+          <div className="skeleton w-10 h-10 rounded-lg" />
+          <div className="skeleton w-48 h-7" />
+          <div className="skeleton w-10 h-10 rounded-lg" />
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+          <StatCardSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <ChartSkeleton />
+          <ChartSkeleton />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <CardSkeleton />
+          <CardSkeleton />
         </div>
       </Layout>
     );
@@ -306,7 +324,7 @@ function CategoryRow({ cat, isDark }) {
         </div>
         <div className="text-right">
           {budzet > 0 && (
-            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{wydatki.toFixed(2)} / {budzet} zł</p>
+            <p className={`text-xs ${isDark ? 'text-slate-400' : 'text-gray-500'}`}>{formatPLN(wydatki)} / {formatPLN(budzet)}</p>
           )}
           <span style={{ color: balance >= 0 ? GREEN : '#dc2626' }} className="text-sm font-bold">
             {(balance > 0 ? '+' : '')}{formatMoney(balance)}
@@ -337,8 +355,7 @@ function IconPlanned() { return <svg className="w-5 h-5 text-[#f59e0b]" fill="no
 function IconCurrent() { return <svg className="w-5 h-5 text-[#8b5cf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-3.866 0-7 1.567-7 3.5V14a2 2 0 002 2h2v-2.5m14 0H9" /></svg>; }
 
 function formatMoney(v) {
-  v = Number(v || 0);
-  return `${v.toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} zł`;
+  return formatPLN(v);
 }
 
 function CustomTooltip({ active, payload }) {
@@ -346,11 +363,11 @@ function CustomTooltip({ active, payload }) {
   return (
     <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg">
       {payload.map((p) => {
-        const val = Number(p.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const val = formatPLN(p.value);
         return (
           <div key={p.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:p.color, flexShrink:0 }} />
-            <span className="dark:text-slate-200">{p.name}: {val} zł</span>
+            <span className="dark:text-slate-200">{p.name}: {val}</span>
           </div>
         );
       })}
@@ -366,14 +383,14 @@ function CustomBarTooltip({ active, payload }) {
      <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg max-w-[240px]">
       {d.label && <p className="dark:text-slate-200" style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
       {payload.map((e) => {
-        const val = Number(e.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const val = formatPLN(e.value);
         if (seenNames.has(e.name)) return null;
         seenNames.add(e.name);
         return (
           <div key={e.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:e.color, flexShrink:0 }} />
             <span className="dark:text-slate-400" style={{ fontSize:'13px' }}>{e.name}</span>
-            <strong className="dark:text-slate-200">{val} zł</strong>
+            <strong className="dark:text-slate-200">{val}</strong>
           </div>
         );
       })}
