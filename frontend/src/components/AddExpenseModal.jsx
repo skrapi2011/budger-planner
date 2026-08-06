@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ModalDodajWydatek({ isOpen, onClose, onSubmit, activeCategories = [] }) {
+export default function AddExpenseModal({ isOpen, onClose, onSubmit, activeCategories = [] }) {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${

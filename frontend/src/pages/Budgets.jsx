@@ -34,6 +34,7 @@ export default function Budzety({ user }) {
   const now = new Date();
   const [monthStr, setMonthStr] = useState(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`);
   const [showModal, setShowModal] = useState(false);
+  const [modalCategoryId, setModalCategoryId] = useState(null);
   const [categories, setCategories] = useState([]);
   const [editingBudgets, setEditingBudgets] = useState({});
   const [originalValues, setOriginalValues] = useState({});
@@ -194,7 +195,7 @@ export default function Budzety({ user }) {
           <div className="flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-800 dark:text-slate-200">Budżety kategorii</h3>
             {hasMissingCategory && (
-              <button onClick={() => setShowModal(true)} className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors shadow-md flex items-center gap-2">
+              <button onClick={() => { setModalCategoryId(null); setShowModal(true); }} className="px-4 py-2 rounded-lg text-sm font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors shadow-md flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                 Dodaj budżet
               </button>
@@ -205,7 +206,7 @@ export default function Budzety({ user }) {
             <div className="bg-white rounded-xl shadow-sm p-12 border border-gray-100 text-center dark:bg-slate-800 dark:border-slate-700">
               <p className="text-gray-500 mb-4 dark:text-slate-400">Brak budżetów na ten miesiąc.</p>
               {hasMissingCategory && (
-                <button onClick={() => setShowModal(true)} className="px-6 py-3 rounded-lg font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors mx-auto">
+                <button onClick={() => { setModalCategoryId(null); setShowModal(true); }} className="px-6 py-3 rounded-lg font-semibold bg-[#32a852] hover:bg-[#1f8c42] text-white transition-colors mx-auto">
                   Dodaj pierwszy budżet
                 </button>
               )}
@@ -286,7 +287,7 @@ export default function Budzety({ user }) {
           )}
                         </div>
                       ) : (
-                        <button onClick={() => setShowModal(true)} className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors border border-dashed border-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 dark:border-slate-600">
+                        <button onClick={() => { setModalCategoryId(bud.category_id); setShowModal(true); }} className="mt-3 px-4 py-2 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-600 transition-colors border border-dashed border-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-300 dark:border-slate-600">
                           Ustaw budżet dla tej kategorii
                         </button>
                       )}
@@ -303,6 +304,7 @@ export default function Budzety({ user }) {
               monthStr={monthStr}
               categories={categories.filter(c => !budgets.find(b => b.category_id === c.id))}
               categoriesLoaded={categoriesLoaded}
+              initialCategoryId={modalCategoryId}
               onClose={() => setShowModal(false)}
               onAdded={() => loadBudgets(monthStr)}
             />

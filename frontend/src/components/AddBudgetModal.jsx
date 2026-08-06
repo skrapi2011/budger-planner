@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import * as api from '../api';
 
-export default function AddBudgetModal({ monthStr, categories, onClose, onAdded }) {
+export default function AddBudgetModal({ monthStr, categories, onClose, onAdded, initialCategoryId }) {
   const [selectedCatId, setSelectedCatId] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
@@ -28,10 +28,13 @@ export default function AddBudgetModal({ monthStr, categories, onClose, onAdded 
 
   // when categories load, auto-select if none selected yet
   useEffect(() => {
-    if (!selectedCatId && effectiveCats.length > 0) {
+    const preferred = initialCategoryId?.toString();
+    if (preferred && effectiveCats.some(c => c.id?.toString() === preferred)) {
+      setSelectedCatId(preferred);
+    } else if (!selectedCatId && effectiveCats.length > 0) {
       setSelectedCatId(effectiveCats[0].id?.toString() || '');
     }
-  }, [effectiveCats, selectedCatId]);
+  }, [effectiveCats, selectedCatId, initialCategoryId]);
 
   async function handleSubmit(e) {
     e.preventDefault();

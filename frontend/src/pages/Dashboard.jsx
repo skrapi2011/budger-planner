@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import Layout from '../components/Layout';
-import ModalDodajWydatek from '../components/ModalDodajWydatek';
+import AddExpenseModal from '../components/AddExpenseModal';
 import { useTheme } from '../ThemeContext';
 import * as api from '../api';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -246,7 +246,7 @@ export default function Dashboard({ user }) {
         )}
       </Card>
 
-      <ModalDodajWydatek isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={activeCategories} />
+      <AddExpenseModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={activeCategories} />
 
 
       {/* Floating add button */}
