@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import Layout from '../components/Layout';
-import ModalDodajWydatek from '../components/ModalDodajWydatek';
+import AddExpenseModal from '../components/AddExpenseModal';
 import * as api from '../api';
 
 const MONTH_NAMES = [
@@ -132,7 +132,7 @@ function getCurrentMonth() {
             <input type="text" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Szukaj..." className="flex-1 min-w-[200px] px-3 py-1.5 rounded-md border border-gray-300 focus:border-[#32a852] focus:ring-[#32a852] sm:text-sm" />
           </div>
 
-          <ModalDodajWydatek isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={categories} />
+          <AddExpenseModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={categories} />
 
           {Object.keys(grouped).length === 0 ? (
             <p className="text-center text-gray-500 py-8">Brak transakcji</p>

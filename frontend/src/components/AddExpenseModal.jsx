@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ModalDodajWydatek({ isOpen, onClose, onSubmit, activeCategories = [] }) {
+export default function AddExpenseModal({ isOpen, onClose, onSubmit, activeCategories = [] }) {
   return (
     <div
       className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 transition-opacity duration-200 ${
@@ -48,16 +48,6 @@ function Form({ isOpen, categories, onClose, onSubmit }) {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen])
-
-  useEffect(() => {
-    if (!isOpen) {
-      setType('wydatek')
-      setAmount('')
-      setDescription('')
-      setDate(new Date().toISOString().slice(0, 10))
-      setCategoryId('')
-    }
-  })
 
   const handleSubmit = (e) => {
     e.preventDefault()

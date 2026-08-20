@@ -11,7 +11,7 @@ function useDark() {
   return dark || false;
 }
 import Layout from '../components/Layout';
-import ModalDodajWydatek from '../components/ModalDodajWydatek';
+import AddExpenseModal from '../components/AddExpenseModal';
 import * as api from '../api';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
@@ -21,7 +21,6 @@ const MONTH_NAMES = [
 ];
 
 const GREEN = '#32a852';
-const HOVER_GREEN = '#1f8c42';
 
 function getCurrentMonth() {
   const now = new Date();
@@ -266,7 +265,7 @@ export default function Dashboard({ user }) {
         )}
       </Card>
 
-      <ModalDodajWydatek isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={activeCategories} />
+      <AddExpenseModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onSubmit={handleAddExpense} activeCategories={activeCategories} />
 
 
       {/* Floating add button */}
@@ -397,7 +396,6 @@ function CategoryRow({ cat, isDark }) {
 // Reusable icon components for stat cards
 function IconAllTime() { return <svg className="w-5 h-5 text-[#ef4444]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" /></svg>; }
 function IconMonth() { return <svg className="w-5 h-5 text-[#3b82f6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 000-4H5a2 2 0 000 4z" /></svg>; }
-function IconPlanned() { return <svg className="w-5 h-5 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>; }
 function IconCurrent() { return <svg className="w-5 h-5 text-[#8b5cf6]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 8c-3.866 0-7 1.567-7 3.5V14a2 2 0 002 2h2v-2.5m14 0H9" /></svg>; }
 function IconChange() { return <svg className="w-5 h-5 text-[#f59e0b]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" /></svg>; }
 
