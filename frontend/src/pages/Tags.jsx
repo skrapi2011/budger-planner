@@ -83,8 +83,8 @@ export default function Tags({ user }) {
   return (
     <Layout username={user}>
       <div className="mb-6">
-        <h2 className="text-xl font-bold text-gray-900 mb-1">Tag Management</h2>
-        <p className="text-sm text-gray-500">Manage and filter transactions by tags</p>
+        <h2 className="text-xl font-bold text-gray-900 mb-1 dark:text-slate-100">Tag Management</h2>
+        <p className="text-sm text-gray-500 dark:text-slate-400">Manage and filter transactions by tags</p>
       </div>
 
       {loading ? (

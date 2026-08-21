@@ -1221,7 +1221,7 @@ def year_summary():
                FROM Budgets b 
                WHERE b.user_id=? AND LENGTH(b.month_year)=7 AND b.month_year>=? AND b.month_year<?
                GROUP BY b.month_year""",
-            (g.current_user_id, f"{start_year}-01-01", next_year_start_date),
+            (g.current_user_id, f"{start_year}-01", f"{start_year + 1}-01"),
         ).fetchall()
 
         budget_map = {}
@@ -1231,8 +1231,8 @@ def year_summary():
             budget_map[mk] = val
 
         month_names_pl = [
-            "Styczen", "Luty", "Marzec", "Kwiecien", "Maj", "Czerwiec",
-            "Lipiec", "Sierpien", "Wrzesien", "Pazdziernik", "Listopad", "Grudzień"
+            "Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec",
+            "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"
         ]
 
         now = datetime.now()
@@ -1281,7 +1281,7 @@ def year_summary():
                FROM Budgets 
                WHERE user_id=? AND month_year>=? AND month_year<?
                GROUP BY category_id""",
-            (g.current_user_id, f"{start_year}-01-01", next_year_start_date),
+            (g.current_user_id, f"{start_year}-01", f"{start_year + 1}-01"),
         ).fetchall()
 
         budget_map_cat = {}

@@ -15,8 +15,6 @@ export default function YearOverview({ user }) {
   const [year, setYear] = useState(getCurrentYear());
   const [data, setData] = useState(null);
 
-  useEffect(() => { loadYear(); }, [year]);
-
   async function loadYear() {
     setLoading(true);
     try {
@@ -29,6 +27,8 @@ export default function YearOverview({ user }) {
       setLoading(false);
     }
   }
+
+  useEffect(() => { loadYear(); }, [year]);
 
   function prevYear() { setYear(y => y - 1); }
   function nextYear() { setYear(y => y + 1); }
@@ -45,15 +45,9 @@ export default function YearOverview({ user }) {
 
   const { total_spending, total_budgeted, variance, avg_monthly_spending, avg_monthly_budgeted, spend_rate, monthly_summary: rawMonthlySummary = [], category_variance } = data;
 
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1;
-  
-  const monthly_summary = (rawMonthlySummary || []).filter(m => {
-    if (!m?.month) return false;
-    if (year > currentYear) return true;
-    return m.month <= currentMonth;
-  });
+  // Backend already truncates the current year to elapsed months and returns
+  // all 12 months for past years - no client-side filtering needed.
+  const monthly_summary = (rawMonthlySummary || []).filter(m => m?.month);
 
   const pctUsed = total_budgeted > 0 ? (total_spending / total_budgeted) * 100 : 0;
 
@@ -77,11 +71,13 @@ export default function YearOverview({ user }) {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <SummaryCard label="Roczne wydatki" value={total_spending} color="#ef4444" />
+        <SummaryCard label="Roczny budżet" value={total_budgeted} color="#f59e0b" />
         <SummaryCard label="Saldo roczne" value={variance} color={variance >= 0 ? GREEN : '#ef4444'} />
         <SummaryCard label="Wykorzystanie budżetu" value={spend_rate != null ? `${spend_rate}%` : 'N/A'} />
         <SummaryCard label="Średnie miesięczne wydatki" value={avg_monthly_spending} color="#3b82f6" />
-        <SummaryCard label="Średni budżet miesięczny" value={avg_monthly_budgeted} color="#f59e0b" />
+        <SummaryCard label="Średni budżet miesięczny" value={avg_monthly_budgeted} color="#8b5cf6" />
       </div>
 
       {/* Bar chart + category variance */}
@@ -96,7 +92,7 @@ export default function YearOverview({ user }) {
                 <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-slate-600" />
                 <XAxis dataKey="label" tick={{ fontSize: 12 }} />
                 <YAxis tick={{ fontSize: 12 }} width={60}/>
-                <Tooltip formatter={(v) => [formatMoney(v), null]} content={<CustomBarTooltip />} />
+                <Tooltip content={<CustomBarTooltip />} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '13px' }}/>
                 <Line dataKey="spending" name="Wydatki" stroke={GREEN} strokeWidth={4} dot={{ r: 6, fill: '#fff', strokeWidth: 2, stroke: GREEN }} connectNulls />
                 <Line type="monotone" dataKey="budget" name="Budżet" stroke={BLUE_LINE} strokeWidth={1.5} strokeDasharray="8 3" dot={false} connectNulls />
@@ -279,7 +275,7 @@ function CustomBarTooltip({ active, payload }) {
   return (
     <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg max-w-[240px]">
       {d.label && <p style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }} className="text-gray-900 dark:text-white">{d.label}</p>}
-      {payload.map((e) => {
+      {payload.filter(e => e.value != null).map((e) => {
         const val = Number(e.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         return (
           <div key={e.name} style={{ display:'flex', alignItems:'center' }}>

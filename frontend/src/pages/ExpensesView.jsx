@@ -22,8 +22,16 @@ function getCurrentMonth() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
+  // Collapsible category sections: map of category id → expanded.
+  // Empty by default → every section starts collapsed. Kept across data
+  // reloads (add/delete/month change) so the list doesn't snap shut under the cursor.
+  const [expandedCategories, setExpandedCategories] = useState({});
 
   useEffect(() => { loadExpenses(); }, [monthStr]);
+
+  const toggleCategory = (id) => {
+    setExpandedCategories((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
 
   async function loadExpenses() {
     setLoading(true);
@@ -99,14 +107,14 @@ function getCurrentMonth() {
     <Layout username={user}>
       {/* Month navigation */}
       <div className="flex items-center justify-between mb-6">
-        <button onClick={prevMonth} className="px-3 py-1.5 rounded-md bg-white shadow-sm hover:bg-gray-50 dark:bg-slate-800 dark:hover:bg-slate-700 transition-colors" aria-label="poprzedni miesiąc">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+        <button onClick={prevMonth} className="p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 transition-colors" aria-label="poprzedni miesiąc">
+          <svg className="w-5 h-5 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
         </button>
        <h2 className="text-lg font-semibold text-gray-800 dark:text-slate-200">
           {MONTH_NAMES[parseInt(monthStr.split('-')[1], 10) - 1]} {monthStr.split('-')[0]}
         </h2>
-        <button onClick={nextMonth} className="px-3 py-1.5 rounded-md bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors" aria-label="następny miesiąc">
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+        <button onClick={nextMonth} className="p-2 rounded-lg bg-white dark:bg-slate-800 shadow-sm hover:bg-gray-50 dark:hover:bg-slate-700 border border-gray-200 dark:border-slate-700 transition-colors" aria-label="następny miesiąc">
+          <svg className="w-5 h-5 text-gray-600 dark:text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
         </button>
       </div>
 
@@ -137,16 +145,32 @@ function getCurrentMonth() {
           {Object.keys(grouped).length === 0 ? (
             <p className="text-center text-gray-500 py-8">Brak transakcji</p>
           ) : (
-            <div className="space-y-4">{Object.values(grouped).map((g) => (
+            <div className="space-y-4">{Object.values(grouped).map((g) => {
+              const isExpanded = Boolean(expandedCategories[g.id]);
+              return (
               <div key={g.id} className="bg-white dark:bg-slate-800 rounded-lg shadow-sm overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-200 dark:border-slate-700" style={{ backgroundColor: `${g.color}15` }}>
-                  <h3 className="font-medium text-gray-800 dark:text-slate-200 flex items-center gap-2">
-                    {g.icon && <span>{g.icon}</span>}
+                <button
+                  type="button"
+                  onClick={() => toggleCategory(g.id)}
+                  aria-expanded={isExpanded}
+                  className="w-full px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex items-center gap-2 text-left cursor-pointer transition-[filter] hover:brightness-95 dark:hover:brightness-125"
+                  style={{ backgroundColor: `${g.color}15` }}
+                >
+                  <svg
+                    className={`w-4 h-4 shrink-0 text-gray-500 dark:text-slate-400 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                    fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                    aria-hidden="true"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  {g.icon && <span>{g.icon}</span>}
+                  <span className="font-medium text-gray-800 dark:text-slate-200 flex items-center gap-2">
                     {g.name} <span className="text-sm font-normal text-gray-400 dark:text-slate-500">({g.total.toFixed(2)} PLN)</span>
-                  </h3>
-                </div>
+                    <span className="text-xs px-1.5 py-0.5 rounded-full bg-white/70 text-gray-500 dark:bg-slate-900/50 dark:text-slate-400">{g.transactions.length}</span>
+                  </span>
+                </button>
 
-                {g.transactions.map((tx) => (
+                {isExpanded && g.transactions.map((tx) => (
                   <div key={tx.id} style={{ backgroundColor: `${g.color}0D` }} className="px-4 py-3 flex items-center justify-between hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors border-t border-gray-100 dark:border-slate-700">
                     <span style={{ color: tx.category_color || '#64748b' }} className="flex items-center gap-2 min-w-[140px] shrink-0 max-w-md truncate">
                       {tx.category_icon && <span>{tx.category_icon}</span>}
@@ -176,7 +200,8 @@ function getCurrentMonth() {
                   </div>
                 ))}
               </div>
-            ))}</div>
+              );
+            })}</div>
           )}
         </>
       )}

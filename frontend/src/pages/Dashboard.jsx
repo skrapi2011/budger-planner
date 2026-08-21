@@ -413,7 +413,7 @@ function CustomTooltip({ active, payload }) {
         return (
           <div key={p.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:p.color, flexShrink:0 }} />
-            <span>{p.name}: {val} zł</span>
+            <span className="text-gray-900 dark:text-slate-100">{p.name}: {val} zł</span>
           </div>
         );
       })}
@@ -427,7 +427,7 @@ function CustomBarTooltip({ active, payload }) {
   const seenNames = new Set();
   return (
      <div className="bg-white dark:bg-slate-800 border dark:border-slate-700 shadow-md p-3 rounded-lg max-w-[240px]">
-      {d.label && <p style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
+      {d.label && <p className="text-gray-900 dark:text-white" style={{ fontSize:'13px', fontWeight:700, marginBottom:'6px' }}>{d.label}</p>}
       {payload.map((e) => {
         const val = Number(e.value).toLocaleString('pl-PL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         if (seenNames.has(e.name)) return null;
@@ -435,8 +435,8 @@ function CustomBarTooltip({ active, payload }) {
         return (
           <div key={e.name} style={{ display:'flex', alignItems:'center', gap:'6px', margin:'4px 0' }}>
             <span style={{ width:'10px', height:'10px', borderRadius:'50%', background:e.color, flexShrink:0 }} />
-            <span style={{ color:'#6b7280', fontSize:'13px' }}>{e.name}</span>
-            <strong>{val} zł</strong>
+            <span className="text-gray-600 dark:text-slate-400" style={{ fontSize:'13px' }}>{e.name}</span>
+            <strong className="text-gray-900 dark:text-white">{val} zł</strong>
           </div>
         );
       })}

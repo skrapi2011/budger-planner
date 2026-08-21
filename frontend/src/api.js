@@ -1,10 +1,27 @@
 const SERVER_URL = import.meta.env.VITE_API_URL || '';
 const API_BASE = `${SERVER_URL}/api`;
 
+// Registered by the router (App.jsx): called when an authenticated request
+// comes back 401, i.e. the JWT expired. Redirects to /login with a toast.
+let sessionExpiredHandler = null;
+export function setSessionExpiredHandler(fn) {
+  sessionExpiredHandler = fn;
+}
+
 async function _fetch(url, options) {
   const fullUrl = url.startsWith('http') ? url : `${API_BASE}${url}`;
   const response = await fetch(fullUrl, options);
   if (response.status === 401) {
+    // Only treat as expired session when we actually sent a token.
+    // Login/register send no auth header — their 401 means bad credentials.
+    const hadAuth = Boolean(options?.headers?.Authorization);
+    if (hadAuth) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      try {
+        sessionExpiredHandler?.();
+      } catch { /* handler errors are non-fatal */ }
+    }
     throw new Error('Unauthorized');
   }
   const data = await response.json();
@@ -36,9 +53,11 @@ export async function login(username, password) {
 }
 
 export async function logout() {
+  // Backend logout is a stateless no-op (no @require_auth), so we skip the
+  // auth header — an expired token here must NOT trigger the session-expired toast.
   const token = localStorage.getItem('token');
   if (token) {
-    try { await _fetch('/auth/logout', { method: 'DELETE', headers: getHeaders(true) }); } catch {}
+    try { await _fetch('/auth/logout', { method: 'DELETE', headers: getHeaders(false) }); } catch {}
   }
   localStorage.removeItem('token');
   localStorage.removeItem('user');
